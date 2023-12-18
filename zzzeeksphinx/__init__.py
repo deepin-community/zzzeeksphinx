@@ -1,4 +1,4 @@
-__version__ = "1.2.5"
+__version__ = "1.4.0"
 
 
 def setup(app):
@@ -12,6 +12,10 @@ def setup(app):
         render_pydomains,
         extras,
     )
+
+    # we use jquery.  See
+    # https://www.sphinx-doc.org/en/master/changes.html#id65
+    app.setup_extension("sphinxcontrib.jquery")
 
     autodoc_mods.setup(app)
     dialect_info.setup(app)

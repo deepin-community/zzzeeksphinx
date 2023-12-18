@@ -29,15 +29,15 @@ zzzeeksphinx/themes/zsbase/page.mako
 zzzeeksphinx/themes/zsbase/search.mako
 zzzeeksphinx/themes/zsbase/static_base.mako
 zzzeeksphinx/themes/zsbase/theme.conf
-zzzeeksphinx/themes/zsbase/static/searchtools.js
 zzzeeksphinx/themes/zsmako/layout.mako
 zzzeeksphinx/themes/zsmako/theme.conf
 zzzeeksphinx/themes/zsmako/static/docs.css
 zzzeeksphinx/themes/zzzeeksphinx/theme.conf
+zzzeeksphinx/themes/zzzeeksphinx/static/annotated.png
 zzzeeksphinx/themes/zzzeeksphinx/static/deepalchemy.png
 zzzeeksphinx/themes/zzzeeksphinx/static/deepalchemy_original.png
-zzzeeksphinx/themes/zzzeeksphinx/static/detectmobile.js
 zzzeeksphinx/themes/zzzeeksphinx/static/docs.scss
 zzzeeksphinx/themes/zzzeeksphinx/static/dragons.png
 zzzeeksphinx/themes/zzzeeksphinx/static/dragons_original.png
 zzzeeksphinx/themes/zzzeeksphinx/static/init.js
+zzzeeksphinx/themes/zzzeeksphinx/static/nonannotated.png

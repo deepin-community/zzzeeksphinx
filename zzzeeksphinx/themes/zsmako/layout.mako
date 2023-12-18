@@ -139,7 +139,7 @@ withsidebar = bool(toc) and current_page_name != 'index'
     </div>
 
     <h3><a href="${pathto('index')}">Table of Contents</a></h3>
-    ${toc}
+    <div id="sidebar-toc">${toc}</div>
 
     % if prevtopic:
     <h4>Previous Topic</h4>
@@ -216,7 +216,6 @@ withsidebar = bool(toc) and current_page_name != 'index'
     % endfor
     <!-- end iterate through sphinx environment script_files -->
 
-    <script type="text/javascript" src="${pathto('_static/detectmobile.js', 1)}"></script>
     <script type="text/javascript" src="${pathto('_static/init.js', 1)}"></script>
 
 </%block>

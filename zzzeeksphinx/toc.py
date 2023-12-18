@@ -1,10 +1,20 @@
 #!coding: utf-8
+import re
+from typing import cast
 
 from docutils import nodes as docutils_nodes
+from sphinx.application import Sphinx
+from sphinx.builders.html import StandaloneHTMLBuilder
 from sphinx.environment.adapters.toctree import TocTree
 
 
-class TOCMixin(object):
+UNDERSCORE_RE = re.compile(r"_\w+\.(.+)$")
+
+
+class TOCMixin:
+
+    app: Sphinx
+
     def get_current_subtoc(self, current_page_name, start_from=None):
         """Return a TOC for sub-files and sub-elements of the current file.
 
@@ -19,6 +29,9 @@ class TOCMixin(object):
         "drill-down" style navigation.
 
         """
+        assert self.app.env is not None
+        assert self.app.builder is not None
+
         toc_tree = TocTree(self.app.env)
         raw_tree = toc_tree.get_toctree_for(
             current_page_name, self.app.builder, True, maxdepth=-1
@@ -70,7 +83,7 @@ class TOCMixin(object):
                             break
 
                     local_text = elem.children[0:index]
-                    name = local_text[0].rawsource
+                    name = str(local_text[0])
                     remainders = elem.children[index:]
 
                     yield level, refuri, name, local_text
@@ -192,9 +205,60 @@ class TOCMixin(object):
 
         nodes = _organize_nodes(_locate_nodes([raw_tree], 0))
         _render_nodes(nodes, start_from=start_from, parent_element=element)
-        return self.app.builder.render_partial(element)["fragment"]
+        return cast(StandaloneHTMLBuilder, self.app.builder).render_partial(
+            element
+        )["fragment"]
+
+    def get_local_toc(self, current_page_name, apply_exact_top_anchor=False):
+        """Return the equivalent of Sphinx "toc" with options for rendering."""
+
+        assert self.app.env is not None
+        assert self.app.builder is not None
+
+        # local toc tree.  will be missing the actual anchor for top section
+        toc_tree = TocTree(self.app.env)
+        local_toc_tree = toc_tree.get_toc_for(
+            current_page_name, self.app.builder
+        )
+
+        # sphinx "toc" puts '#' as the anchor for the first section, meaning
+        # if you click it, the page jumps to the top (unless you redefine #
+        # which I'd rather not do).  This was all fine and good for a sidebar
+        # toc, but a toc at the top of the page this just takes you away
+        # from where you want to go.  The lead section of the content
+        # has a real anchorname, so swap that into the toc
+        if apply_exact_top_anchor:
+            # get that top anchor name from the ids
+            the_top_anchor = None
+            sections = list(
+                self.app.env.get_doctree(current_page_name).traverse(
+                    docutils_nodes.section
+                )
+            )
+
+            if sections:
+                first_section = sections[0]
+
+                if first_section.attributes["ids"]:
+                    the_top_anchor = first_section.attributes["ids"][0]
+
+            # have the top anchor and the toctree, put them together!
+            if the_top_anchor:
+                local_toc_tree = local_toc_tree.deepcopy()
+                toc_tree_refs = list(
+                    local_toc_tree.traverse(docutils_nodes.reference)
+                )
+                if toc_tree_refs:
+                    toc_tree_refs[0]["anchorname"] = toc_tree_refs[0][
+                        "refuri"
+                    ] = f"#{the_top_anchor}"
+
+        return cast(StandaloneHTMLBuilder, self.app.builder).render_partial(
+            local_toc_tree
+        )["fragment"]
 
     def _link_node(self, refuri, text_nodes):
+        text_nodes = list(self._sub_out_underscores(text_nodes))
         link = docutils_nodes.reference("", "", text_nodes[0], refuri=refuri)
         link.extend(text_nodes[1:])
         cp = docutils_nodes.inline(classes=["link-container"])
@@ -204,12 +268,12 @@ class TOCMixin(object):
     def _strong_node(self, refuri, text_nodes):
         cp = docutils_nodes.inline(classes=["link-container"])
         n1 = docutils_nodes.strong()
-        n1.extend(text_nodes)
+        n1.extend(self._sub_out_underscores(text_nodes))
         cp.append(n1)
         paramlink = docutils_nodes.reference(
             "",
             "",
-            docutils_nodes.Text(u"¶", u"¶"),
+            docutils_nodes.Text("¶", "¶"),
             refid="",
             # paramlink is our own CSS class, headerlink
             # is theirs.  Trying to get everything we can for existing
@@ -219,3 +283,12 @@ class TOCMixin(object):
 
         cp.append(paramlink)
         return cp
+
+    def _sub_out_underscores(self, nodes):
+        for node in nodes:
+            for lt in node.traverse(docutils_nodes.Text):
+                m = UNDERSCORE_RE.match(str(lt))
+                if m:
+                    lt.parent.replace(lt, docutils_nodes.Text(m.group(1)))
+
+            yield node
