@@ -1,6 +1,8 @@
 ## coding: utf-8
 
 <%!
+    import datetime
+
     local_script_files = []
 
     default_css_files = [
@@ -131,10 +133,10 @@ withsidebar = bool(toc) and (
             </form>
 
             <p>
-            <a href="${pathto('contents') or pathto('index')}">Contents</a> |
+            <a href="${pathto('contents')}">Contents</a> |
             <a href="${pathto('genindex')}">Index</a>
             % if zip_url:
-            | <a href="${zip_url}">Download as ZIP file</a>
+            | <a href="${zip_url}">Download this Documentation</a>
             % endif
             </p>
 
@@ -142,6 +144,7 @@ withsidebar = bool(toc) and (
     % endif
 
     % if withsidebar:
+
         <div id="docs-sidebar-popout">
             <h3><a href="${pathto('index')}">${docstitle|h}</a></h3>
             % if is_beta_version:
@@ -154,10 +157,9 @@ withsidebar = bool(toc) and (
                 <p id="sidebar-current">current release</p>
             % endif
             <p id="sidebar-topnav">
-                <a href="${pathto('contents') or pathto('index')}">Contents</a> |
-                <a href="${pathto('genindex')}">Index</a>
+                <a href="${pathto('index')}">Home</a>
                 % if zip_url:
-                | <a href="${zip_url}">Download as ZIP file</a>
+                | <a href="${zip_url}">Download this Documentation</a>
                 % endif
             </p>
 
@@ -220,28 +222,62 @@ withsidebar = bool(toc) and (
 
     </div>
 
-    <%doc>
-    <div id="docs-top-navigation">
-        <a href="${pathto('index')}">${docstitle|h}</a>
-        % if parents:
-            % for parent in parents:
-                » <a href="${parent['link']|h}" title="${parent['title']}">${parent['title']}</a>
-            % endfor
-        % endif
-        % if current_page_name != 'index':
-        » ${self.show_title()}
-        % endif
+    <div id="narrow-index-nav">
+        <form class="search" action="${pathto('search')}" method="get">
+            <label>
+                Search terms:
+            <input type="text" placeholder="search..." name="q" size="12" />
+            </label>
+            <input type="submit" value="${_('Search')}" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
 
-        <h2>
-            <%block name="show_title">
-                ${title}
-            </%block>
-        </h2>
+        <p>
+        <a href="${pathto('index')}">Home</a>
+        % if zip_url:
+        | <a href="${zip_url}">Download this Documentation</a>
+        % endif
+        </p>
 
     </div>
-    </%doc>
 
-    <div id="docs-body" class="${'withsidebar' if withsidebar else ''} ${current_page_name.replace("/", "-")}" >
+    % if withsidebar:
+
+        <div id="docs-narrow-top-navigation">
+            <ul>
+            % if prevtopic:
+                <li><b>Previous:</b>
+                <a href="${prevtopic['link']|h}" title="${_('previous chapter')}">${prevtopic['title']}</a></li>
+            % endif
+            % if nexttopic:
+                <li><b>Next:</b>
+                <a href="${nexttopic['link']|h}" title="${_('next chapter')}">${nexttopic['title']}</a></li>
+            % endif
+
+            <li><b>Up:</b> <a href="${pathto('index')}">Home</a></li>
+            % if parents:
+                % for _parent in parents:
+                    <ul><li><a href="${_parent['link']|h}" title="${_parent['title']}">${_parent['title']}</a></li>
+                % endfor
+            % endif
+            % for _parent in parents:
+                </ul>
+            % endfor
+
+
+
+            <li><b>On this page:</b></li>
+            ${local_toc(current_page_name, apply_exact_top_anchor=True)}
+
+            </ul>
+
+        </div>
+
+    % endif
+
+
+    <div id="docs-body" role="main" class="${'withsidebar' if withsidebar else ''} ${current_page_name.replace("/", "-")}" >
         ${next.body()}
     </div>
 
@@ -270,6 +306,9 @@ withsidebar = bool(toc) and (
     % if show_sphinx:
         Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> ${sphinx_version|h}.
     % endif
+
+    Documentation last generated: ${datetime.datetime.now().strftime("%c")}
+
     </div>
 </div>
 
@@ -294,7 +333,6 @@ withsidebar = bool(toc) and (
     % endfor
     <!-- end iterate through sphinx environment script_files -->
 
-    <script type="text/javascript" src="${pathto('_static/detectmobile.js', 1)}"></script>
     <script type="text/javascript" src="${pathto('_static/init.js', 1)}"></script>
 
 </%block>

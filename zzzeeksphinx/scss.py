@@ -2,7 +2,8 @@ from __future__ import absolute_import
 
 import os
 
-from scss import Scss
+import sass
+
 
 # these docs aren't super accurate
 # http://pyscss.readthedocs.org/en/latest/
@@ -57,13 +58,12 @@ def generate_stylesheet(app, exception):
 
     to_gen = app._builder_scss
 
-    compiler = Scss(scss_opts={"style": "expanded"})
     if exception:
         return
     for static_path, name in to_gen:
 
-        css = compiler.compile(
-            open(os.path.join(static_path, "%s.scss" % name)).read()
+        css = sass.compile(
+            string=open(os.path.join(static_path, "%s.scss" % name)).read()
         )
 
         dest = os.path.join(app.builder.outdir, "_static", "%s.css" % name)

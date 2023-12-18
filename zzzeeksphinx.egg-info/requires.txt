@@ -1,3 +1,5 @@
-pyscss
+libsass
 mako
 requests
+sphinx<6.3,>=5.3.0
+sphinxcontrib-jquery

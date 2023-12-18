@@ -9,6 +9,15 @@ LOG = logging.getLogger(__name__)
 
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
+    # sphinx is putting blank __init__ methods, not sure why.
+    # even if I turn off all the extensions here
+    if (
+        what == "class"
+        and name == "__init__"
+        and (not inspect.isfunction(obj) or not obj.__doc__)
+    ):
+        return True
+
     if (
         what == "class"
         and skip
@@ -167,7 +176,12 @@ def write_autosummaries(app, doctree):
 
             # what = ad_node.attributes["objtype"]
             sig = ad_node.children[0]
-            refid = sig.attributes.get("ids", [None])[0]
+
+            ids = sig.attributes.get("ids", [None])
+            if not ids:
+                continue
+
+            refid = ids[0]
             if not refid:
                 continue
 
@@ -206,7 +220,7 @@ def write_autosummaries(app, doctree):
                 nodes.Text(param_str, param_str),
             )
 
-            row.append(nodes.entry("", p, classes=["nowrap"]))
+            row.append(nodes.entry("", p, classes=["autosummary-name"]))
             try:
                 para = ad_node[1][0]
                 if isinstance(para, nodes.paragraph):
@@ -216,7 +230,70 @@ def write_autosummaries(app, doctree):
             except IndexError:
                 text = nodes.Text("", "")
 
-            row.append(nodes.entry("", text))
+            if ad_node.attributes.get("objtype") == "class":
+                member_nodes = []
+
+                for attr_desc in ad_node.traverse(addnodes.desc):
+                    objtype = attr_desc.attributes.get("objtype")
+                    if objtype not in ("classmethod", "method", "attribute"):
+                        continue
+
+                    attr_sig = attr_desc.children[0]
+
+                    attr_ids = attr_sig.attributes.get("ids", [None])
+                    if not attr_ids:
+                        continue
+
+                    attr_ref_id = attr_ids[0]
+                    if not attr_ref_id:
+                        continue
+
+                    attr_name_node = list(
+                        attr_desc.traverse(addnodes.desc_name)
+                    )[0]
+                    attr_name_node = attr_name_node.deepcopy()
+
+                    if objtype in ("classmethod", "method"):
+                        attr_name_node.append(nodes.Text("()"))
+
+                    attr_ref = nodes.reference(
+                        "",
+                        "",
+                        attr_name_node,
+                        refid=attr_ref_id,
+                        classes=["reference", "internal"],
+                    )
+
+                    member_nodes.append(attr_ref)
+
+                if member_nodes:
+                    method_list = nodes.paragraph("", "", member_nodes[0])
+
+                    for ref in member_nodes[1:]:
+                        method_list.append(nodes.Text(", "))
+                        method_list.append(ref)
+
+                    method_box = nodes.container(
+                        "",
+                        nodes.paragraph(
+                            "", "", nodes.strong("", nodes.Text("Members"))
+                        ),
+                        method_list,
+                        classes=["class-members"],
+                    )
+
+                    content = ad_node.traverse(addnodes.desc_content)
+                    if content:
+                        content = list(content)[0]
+                        for i, n in enumerate(content.children):
+                            if isinstance(n, (addnodes.index, addnodes.desc)):
+                                content.insert(i - 1, method_box)
+                                break
+
+            entry = nodes.entry("", text)
+
+            row.append(entry)
+
             body.append(row)
 
         if where > 0:
@@ -235,7 +312,11 @@ def fix_up_autodoc_headers(app, doctree):
             qualified = "%s.%s." % (modname, clsname)
 
             start_index = 0
+            is_classmethod = False
             if sig[0].rawsource == "async ":
+                start_index = 1
+            elif "classmethod" in sig[0].rawsource:
+                is_classmethod = True
                 start_index = 1
 
             sig.insert(
@@ -248,12 +329,15 @@ def fix_up_autodoc_headers(app, doctree):
                 ),
             )
 
-            sig.insert(
-                start_index,
-                addnodes.desc_annotation(
-                    objtype, nodes.Text(objtype + " ", objtype + " ")
-                ),
-            )
+            # sphinx seems to put the qualifier "classmethod" for classmethods,
+            # so don't add our "method" qualifier in that case
+            if not is_classmethod:
+                sig.insert(
+                    start_index,
+                    addnodes.desc_annotation(
+                        objtype, nodes.Text(objtype + " ", objtype + " ")
+                    ),
+                )
 
         elif objtype == "function":
             sig = node.children[0]
@@ -292,7 +376,7 @@ def autodoc_process_docstring(app, what, name, obj, options, lines):
     # skipping superclass classlevel docs for now, as these
     # get in the way of using autosummary.
 
-    if what == "class":
+    if what in ("class", "exception"):
         _track_autodoced[name] = obj
 
         # need to translate module names for bases, others
@@ -343,10 +427,12 @@ def autodoc_process_docstring(app, what, name, obj, options, lines):
             clsname, attrname = m.group(1, 2)
             if clsname in _track_autodoced:
                 cls = _track_autodoced[clsname]
+                found = False
                 for supercls in cls.__mro__:
                     if attrname in supercls.__dict__:
+                        found = True
                         break
-                if supercls is not cls:
+                if found and supercls is not cls and supercls is not object:
                     adjusted_mod = _adjust_rendered_mod_name(
                         app.env.config, supercls.__module__, supercls.__name__
                     )
@@ -405,8 +491,23 @@ def work_around_issue_6785():
     autodoc.PropertyDocumenter.priority = -100
 
 
+def work_around_issue_10351():
+    """disable all @overload parsing
+
+    see  https://github.com/sphinx-doc/sphinx/issues/10351
+
+    """
+    from sphinx.pycode import parser
+
+    def add_overload_entry(self, func):
+        pass
+
+    parser.VariableCommentPicker.add_overload_entry = add_overload_entry
+
+
 def setup(app):
     work_around_issue_6785()
+    work_around_issue_10351()
 
     app.connect("autodoc-skip-member", autodoc_skip_member)
     app.connect("autodoc-process-docstring", autodoc_process_docstring)
