@@ -1,5 +1,5 @@
 import ast
-import imp
+import importlib
 import os
 import re
 import warnings
@@ -11,13 +11,12 @@ from sphinx.errors import NoUri
 from sphinx.locale import _
 from sphinx.locale import __
 from sphinx.pycode import ModuleAnalyzer
-from sphinx.util import status_iterator
+from sphinx.util.display import status_iterator
 
 from . import util
 
 
 def view_source(name, rawtext, text, lineno, inliner, options={}, content=[]):
-
     env = inliner.document.settings.env
 
     node = _view_source_node(env, text, None)
@@ -211,16 +210,24 @@ def _view_source_node(env, text, state):
 
     for tok in modname.split("."):
         try:
-            file_, pathname, desc = imp.find_module(
-                tok, [pathname] if pathname else None
+            thing = importlib.machinery.PathFinder().find_spec(
+                tok,
+                [pathname] if pathname else None,
             )
         except ImportError as ie:
             raise ImportError("Error trying to import %s: %s" % (modname, ie))
         else:
-            if file_:
-                if state:
-                    module_docstring = _get_module_docstring(file_)
-                file_.close()
+            pathname = (
+                thing.submodule_search_locations[0]
+                if thing.submodule_search_locations
+                else thing.origin
+            )
+            if thing.origin:
+                assert thing.origin
+
+                with open(thing.origin, "r") as tfile:
+                    if state:
+                        module_docstring = _get_module_docstring(tfile)
 
     # unlike viewcode which silently traps exceptions,
     # I want this to totally barf if the file can't be loaded.
@@ -345,7 +352,6 @@ class AutoSourceDirective(Directive):
 
 
 def setup(app):
-
     app.add_role("viewsource", view_source)
 
     app.add_directive("autosource", AutoSourceDirective)
