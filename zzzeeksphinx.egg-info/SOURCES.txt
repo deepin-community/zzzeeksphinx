@@ -1,8 +1,14 @@
+.gitignore
+.pre-commit-config.yaml
 LICENSE
 MANIFEST.in
 README.rst
 setup.cfg
 setup.py
+.github/workflows/publish.yaml
+tools/annotated.xcf
+tools/dev_anno_detection.py
+tools/fix_xrefs.py
 zzzeeksphinx/__init__.py
 zzzeeksphinx/autodoc_mods.py
 zzzeeksphinx/dialect_info.py

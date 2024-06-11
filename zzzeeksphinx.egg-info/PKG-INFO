@@ -1,19 +1,23 @@
 Metadata-Version: 2.1
 Name: zzzeeksphinx
-Version: 1.4.0
+Version: 1.5.0
 Summary: Zzzeek's Sphinx Layout and Utilities.
 Home-page: https://github.com/sqlalchemyorg/zzzeeksphinx
 Author: Mike Bayer
 Author-email: mike@zzzcomputing.com
 License: MIT
 Keywords: Sphinx
-Platform: UNKNOWN
 Classifier: Development Status :: 3 - Alpha
 Classifier: Environment :: Console
 Classifier: Intended Audience :: Developers
 Classifier: Programming Language :: Python :: 3
 Classifier: Topic :: Documentation
 License-File: LICENSE
+Requires-Dist: libsass
+Requires-Dist: mako
+Requires-Dist: requests
+Requires-Dist: sphinx<7.3,>=7.2
+Requires-Dist: sphinxcontrib-jquery
 
 =============
 zzzeeksphinx
@@ -109,8 +113,6 @@ when running autodoc to display API documentation::
       ("sqlalchemy.engine.interfaces", "Connectable"): "sqlalchemy.engine",
       ("sqlalchemy.sql.base", "DialectKWArgs"): "sqlalchemy.sql.base",
   }
-
-
 
 
 

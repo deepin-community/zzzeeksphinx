@@ -1,3 +1,20 @@
+zzzeeksphinx (1.5.0-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop patches - no longer needed
+
+ -- Piotr Ożarowski <piotr@debian.org>  Mon, 04 Mar 2024 16:25:39 +0100
+
+zzzeeksphinx (1.4.0-2) unstable; urgency=medium
+
+  [ Thomas Goirand ]
+  * Add Python 3.12 patch:
+    - remove_imp.patch
+  * Add Sphinx 7.2 patch:
+    - fix-data-url_root-into-data-content_root.patch
+
+ -- Piotr Ożarowski <piotr@debian.org>  Fri, 05 Jan 2024 14:26:34 +0100
+
 zzzeeksphinx (1.4.0-1) unstable; urgency=medium
 
   [ Debian Janitor ]

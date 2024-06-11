@@ -1,7 +1,19 @@
 ## coding: utf-8
 
 <%!
-    import datetime
+    import os
+    import time
+    from datetime import datetime, timezone
+
+    if "SOURCE_DATE_EPOCH" in os.environ:
+        generated_at = datetime.fromtimestamp(
+            timestamp=float(os.environ['SOURCE_DATE_EPOCH']),
+            tz=timezone.utc
+        )
+    else:
+        generated_at = datetime.fromtimestamp(
+            timestamp=time.time(),
+        ).astimezone()
 
     local_script_files = []
 
@@ -307,7 +319,7 @@ withsidebar = bool(toc) and (
         Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> ${sphinx_version|h}.
     % endif
 
-    Documentation last generated: ${datetime.datetime.now().strftime("%c")}
+    Documentation last generated: ${generated_at.strftime("%c %Z")}
 
     </div>
 </div>
@@ -317,15 +329,10 @@ withsidebar = bool(toc) and (
 <%block name="lower_scripts">
 
     <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-          URL_ROOT:    '${pathto("", 1)}',
-          VERSION:     '${release|h}',
-          COLLAPSE_MODINDEX: false,
-          FILE_SUFFIX: '${file_suffix}'
-      };
-    </script>
+      ## see https://github.com/sphinx-doc/sphinx/commit/8e730ae303ae686705ea12f44ef11da926a87cf5
+      document.documentElement.dataset.content_root = '${content_root}';
 
-    <script type="text/javascript" id="documentation_options" data-url_root="${ pathto('', 1) }" src="${ pathto('_static/documentation_options.js', 1) }"></script>
+    </script>
 
     <!-- begin iterate through sphinx environment script_files -->
     % for scriptfile in script_files + self.attr.local_script_files:
