@@ -6,3 +6,4 @@ python+sql = zzzeeksphinx.sqlformatter:PythonWithSQLLexer
 zsbase = zzzeeksphinx.theme
 zsmako = zzzeeksphinx.theme
 zzzeeksphinx = zzzeeksphinx.theme
+
